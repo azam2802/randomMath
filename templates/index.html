@@ -184,6 +184,47 @@
             .buttons-container {
                 grid-template-columns: 1fr;
             }
+
+            .stats-table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                width: 100%;
+                margin: 0 auto;  /* Center the table */
+                border-radius: 8px;
+                scrollbar-width: thin;  /* For Firefox */
+            }
+
+            .stats-table::-webkit-scrollbar {  /* For Chrome/Safari */
+                height: 8px;
+            }
+
+            .stats-table::-webkit-scrollbar-thumb {
+                background-color: rgba(0, 0, 0, 0.2);
+                border-radius: 4px;
+            }
+
+            .table-container {
+                position: relative;
+                margin: 2rem -1rem;  /* Extend beyond container padding */
+                padding: 1rem;
+                width: calc(100% + 2rem);
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                background: var(--card-background);
+            }
+
+            .stats-table {
+                min-width: 500px;  /* Ensure minimum width to force scrolling */
+                margin: 0;
+                width: 100%;
+            }
+
+            .stats-table th,
+            .stats-table td {
+                white-space: nowrap;
+                min-width: 100px;
+            }
         }
 
         .stats-table {
@@ -327,6 +368,7 @@
                 document.getElementById('answer').value = '';
                 updateServer();
                 updateProblem();
+                updateStatsTable();  // Add table update
             } else {
                 incorrectCount++;
                 playSound('incorrect');
@@ -334,6 +376,7 @@
                 document.getElementById('attempts').textContent = attemptCount;
                 document.getElementById('answer').value = '';
                 updateServer();
+                updateStatsTable();  // Add table update
             }
         }
 
@@ -344,6 +387,7 @@
             document.getElementById('answer').value = '';
             updateServer();
             updateProblem();
+            updateStatsTable();  // Add table update
         }
 
         function showAnswer() {
@@ -351,6 +395,7 @@
             answerDisplay.style.display = 'block';
             answerDisplay.textContent = `Answer: ${currentAnswer}`;
             playSound('skip');
+            updateStatsTable();  // Add table update
         }
 
         function updateProblem() {
