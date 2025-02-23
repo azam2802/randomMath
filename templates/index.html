@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Math Quiz</title>
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-hover: #4f46e5;
+            --secondary-color: #06b6d4;
+            --warning-color: #f59e0b;
+            --error-color: #ef4444;
+            --background-color: #f8fafc;
+            --card-background: rgba(255, 255, 255, 0.95);
+            --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #a5b4fc 0%, #818cf8 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 2.5rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            background: var(--card-background);
+            box-shadow: var(--box-shadow);
+        }
+
+        .user-info {
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem;
+            border-radius: 10px;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 2rem;
+        }
+
+        .user-info a {
+            color: red;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .stat-box {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--box-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.2s;
+        }
+
+        .stat-box:hover {
+            transform: translateY(-2px);
+        }
+
+        .problem {
+            background: linear-gradient(135deg, var(--card-background), white);
+            font-size: 2.5rem;
+            font-weight: bold;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: var(--box-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 2rem 0;
+        }
+
+        #answer-display {
+            background: linear-gradient(to right, #fef3c7, #fde68a);
+            color: #92400e;
+            padding: 1rem;
+            border-radius: 10px;
+            margin: 1rem 0;
+            font-weight: 500;
+        }
+
+        form {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: var(--box-shadow);
+        }
+
+        input[type="number"] {
+            width: 100%;
+            max-width: 300px;
+            font-size: 1.5rem;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 1rem auto;
+            display: block;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .buttons-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            opacity: 0.9;
+        }
+
+        button[type="submit"] {
+            background: linear-gradient(to right, var(--primary-color), var(--primary-hover));
+            color: white;
+        }
+
+        button[onclick="skipQuestion()"] {
+            background: linear-gradient(to right, var(--warning-color), #f97316);
+            color: white;
+        }
+
+        button[onclick="showAnswer()"] {
+            background: linear-gradient(to right, var(--secondary-color), #0ea5e9);
+            color: white;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+
+            .problem {
+                font-size: 2rem;
+                padding: 1.5rem;
+            }
+
+            input[type="number"] {
+                font-size: 1.2rem;
+                padding: 0.6rem;
+            }
+
+            .buttons-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Math Quiz</h1>
+        <div class="user-info">
+          Welcome, {{ username }} |
+          <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+        <div class="stats">
+          <div class="stat-box">Correct: <span id="correct">{{ user_stats.correct_answers }}</span></div>
+          <div class="stat-box">Incorrect: <span id="incorrect">{{ user_stats.incorrect_answers }}</span></div>
+          <div class="stat-box">Total: <span id="total">{{ user_stats.total_questions }}</span></div>
+          <div class="stat-box">Attempts: <span id="attempts">{{ user_stats.attempts }}</span></div>
+        </div>
+        <div class="problem" id="problem"></div>
+        <p
+          id="answer-display"
+          style="display: none; color: #666; margin: 10px 0"
+        ></p>
+        <form id="quizForm" onsubmit="checkAnswer(event)">
+          <input type="number" id="answer" required />
+          <div class="buttons-container">
+              <button type="button" onclick="skipQuestion()">Next</button>
+              <button type="submit">Submit</button>
+            <button type="button" onclick="showAnswer()">Show Answer</button>
+          </div>
+        </form>
+
+        <audio id="correctSound" src="{{ url_for('static', filename='sounds/correct.mp3') }}"></audio>
+        <audio id="incorrectSound" src="{{ url_for('static', filename='sounds/incorrect.mp3') }}"></audio>
+        <audio id="skipSound" src="{{ url_for('static', filename='sounds/skip.mp3') }}"></audio>
+
+        <script>
+          let currentAnswer;
+          let correctCount = {{ user_stats.correct_answers }};
+          let totalCount = {{ user_stats.total_questions }};
+          let attemptCount = {{ user_stats.attempts }};
+          let incorrectCount = {{ user_stats.incorrect_answers }};
+
+          function updateServer() {
+              fetch('/update_stats', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                      correct: correctCount,
+                      total: totalCount,
+                      attempts: attemptCount,
+                      incorrect: incorrectCount
+                  })
+              });
+          }
+
+          function playSound(type) {
+              let sound;
+              if (type === 'correct') {
+                  sound = document.getElementById('correctSound');
+              } else if (type === 'incorrect') {
+                  sound = document.getElementById('incorrectSound');
+              } else {
+                  sound = document.getElementById('skipSound');
+              }
+              sound.currentTime = 0;
+              sound.play();
+          }
+
+          function checkAnswer(event) {
+              event.preventDefault();
+              const userAnswer = parseInt(document.getElementById('answer').value);
+              attemptCount++;
+
+              if (userAnswer === currentAnswer) {
+                  correctCount++;
+                  totalCount++;  // Only increment total on correct answer
+                  playSound('correct');
+                  document.getElementById('correct').textContent = correctCount;
+                  document.getElementById('total').textContent = totalCount;
+                  document.getElementById('attempts').textContent = attemptCount;
+                  document.getElementById('answer').value = '';
+                  updateServer();
+                  updateProblem();
+              } else {
+                  incorrectCount++;
+                  playSound('incorrect');
+                  document.getElementById('incorrect').textContent = incorrectCount;
+                  document.getElementById('attempts').textContent = attemptCount;
+                  document.getElementById('answer').value = '';
+                  updateServer();
+              }
+          }
+
+          function skipQuestion() {
+              totalCount++;
+              playSound('skip');
+              document.getElementById('total').textContent = totalCount;
+              document.getElementById('answer').value = '';
+              updateServer();
+              updateProblem();
+          }
+
+          function showAnswer() {
+              const answerDisplay = document.getElementById('answer-display');
+              answerDisplay.style.display = 'block';
+              answerDisplay.textContent = `Answer: ${currentAnswer}`;
+              playSound('skip');
+          }
+
+          function updateProblem() {
+              fetch('/get_problem')
+                  .then(response => response.json())
+                  .then(data => {
+                      document.getElementById('problem').textContent = data.problem;
+                      document.getElementById('answer-display').style.display = 'none';
+                      currentAnswer = data.answer;
+                  });
+          }
+
+          updateProblem();
+        </script>
+    </div>
+  </body>
+</html>
