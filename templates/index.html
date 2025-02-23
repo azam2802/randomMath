@@ -185,6 +185,47 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        .stats-table {
+            margin-top: 2rem;
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card-background);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 1rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-table th {
+            background-color: var(--primary-color);  /* Changed from gradient to solid color */
+            color: white;
+            font-weight: 600;
+            padding: 1.2rem 1rem;  /* Slightly increased padding for better look */
+        }
+
+        .stats-table tr:nth-child(even) {
+            background: rgba(255, 255, 255, 0.3);  /* Added alternating row colors */
+        }
+
+        .table-container {
+            margin-top: 3rem;
+            padding: 1rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .table-title {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
     </style>
 </head>
 <body>
@@ -218,94 +259,135 @@
         <audio id="incorrectSound" src="{{ url_for('static', filename='sounds/incorrect.mp3') }}"></audio>
         <audio id="skipSound" src="{{ url_for('static', filename='sounds/skip.mp3') }}"></audio>
 
-        <script>
-          let currentAnswer;
-          let correctCount = {{ user_stats.correct_answers }};
-          let totalCount = {{ user_stats.total_questions }};
-          let attemptCount = {{ user_stats.attempts }};
-          let incorrectCount = {{ user_stats.incorrect_answers }};
-
-          function updateServer() {
-              fetch('/update_stats', {
-                  method: 'POST',
-                  headers: {
-                      'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                      correct: correctCount,
-                      total: totalCount,
-                      attempts: attemptCount,
-                      incorrect: incorrectCount
-                  })
-              });
-          }
-
-          function playSound(type) {
-              let sound;
-              if (type === 'correct') {
-                  sound = document.getElementById('correctSound');
-              } else if (type === 'incorrect') {
-                  sound = document.getElementById('incorrectSound');
-              } else {
-                  sound = document.getElementById('skipSound');
-              }
-              sound.currentTime = 0;
-              sound.play();
-          }
-
-          function checkAnswer(event) {
-              event.preventDefault();
-              const userAnswer = parseInt(document.getElementById('answer').value);
-              attemptCount++;
-
-              if (userAnswer === currentAnswer) {
-                  correctCount++;
-                  totalCount++;  // Only increment total on correct answer
-                  playSound('correct');
-                  document.getElementById('correct').textContent = correctCount;
-                  document.getElementById('total').textContent = totalCount;
-                  document.getElementById('attempts').textContent = attemptCount;
-                  document.getElementById('answer').value = '';
-                  updateServer();
-                  updateProblem();
-              } else {
-                  incorrectCount++;
-                  playSound('incorrect');
-                  document.getElementById('incorrect').textContent = incorrectCount;
-                  document.getElementById('attempts').textContent = attemptCount;
-                  document.getElementById('answer').value = '';
-                  updateServer();
-              }
-          }
-
-          function skipQuestion() {
-              totalCount++;
-              playSound('skip');
-              document.getElementById('total').textContent = totalCount;
-              document.getElementById('answer').value = '';
-              updateServer();
-              updateProblem();
-          }
-
-          function showAnswer() {
-              const answerDisplay = document.getElementById('answer-display');
-              answerDisplay.style.display = 'block';
-              answerDisplay.textContent = `Answer: ${currentAnswer}`;
-              playSound('skip');
-          }
-
-          function updateProblem() {
-              fetch('/get_problem')
-                  .then(response => response.json())
-                  .then(data => {
-                      document.getElementById('problem').textContent = data.problem;
-                      document.getElementById('answer-display').style.display = 'none';
-                      currentAnswer = data.answer;
-                  });
-          }
-
-          updateProblem();
-        </script>
+        <div class="table-container">
+            <h2 class="table-title">All Users Statistics</h2>
+            <table class="stats-table">
+                <thead>
+                    <tr>
+                        <th>Username</th>
+                        <th>Correct</th>
+                        <th>Incorrect</th>
+                        <th>Total</th>
+                        <th>Attempts</th>
+                    </tr>
+                </thead>
+                <tbody id="statsTableBody">
+                </tbody>
+            </table>
+        </div>
     </div>
+
+    <script>
+        let currentAnswer;
+        let correctCount = {{ user_stats.correct_answers }};
+        let totalCount = {{ user_stats.total_questions }};
+        let attemptCount = {{ user_stats.attempts }};
+        let incorrectCount = {{ user_stats.incorrect_answers }};
+
+        function updateServer() {
+            fetch('/update_stats', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    correct: correctCount,
+                    total: totalCount,
+                    attempts: attemptCount,
+                    incorrect: incorrectCount
+                })
+            });
+        }
+
+        function playSound(type) {
+            let sound;
+            if (type === 'correct') {
+                sound = document.getElementById('correctSound');
+            } else if (type === 'incorrect') {
+                sound = document.getElementById('incorrectSound');
+            } else {
+                sound = document.getElementById('skipSound');
+            }
+            sound.currentTime = 0;
+            sound.play();
+        }
+
+        function checkAnswer(event) {
+            event.preventDefault();
+            const userAnswer = parseInt(document.getElementById('answer').value);
+            attemptCount++;
+
+            if (userAnswer === currentAnswer) {
+                correctCount++;
+                totalCount++;  // Only increment total on correct answer
+                playSound('correct');
+                document.getElementById('correct').textContent = correctCount;
+                document.getElementById('total').textContent = totalCount;
+                document.getElementById('attempts').textContent = attemptCount;
+                document.getElementById('answer').value = '';
+                updateServer();
+                updateProblem();
+            } else {
+                incorrectCount++;
+                playSound('incorrect');
+                document.getElementById('incorrect').textContent = incorrectCount;
+                document.getElementById('attempts').textContent = attemptCount;
+                document.getElementById('answer').value = '';
+                updateServer();
+            }
+        }
+
+        function skipQuestion() {
+            totalCount++;
+            playSound('skip');
+            document.getElementById('total').textContent = totalCount;
+            document.getElementById('answer').value = '';
+            updateServer();
+            updateProblem();
+        }
+
+        function showAnswer() {
+            const answerDisplay = document.getElementById('answer-display');
+            answerDisplay.style.display = 'block';
+            answerDisplay.textContent = `Answer: ${currentAnswer}`;
+            playSound('skip');
+        }
+
+        function updateProblem() {
+            fetch('/get_problem')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('problem').textContent = data.problem;
+                    document.getElementById('answer-display').style.display = 'none';
+                    currentAnswer = data.answer;
+                });
+        }
+
+        function updateStatsTable() {
+            fetch('/get_all_stats')
+                .then(response => response.json())
+                .then(data => {
+                    const tbody = document.getElementById('statsTableBody');
+                    tbody.innerHTML = '';
+                    data.forEach(user => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${user.username}</td>
+                            <td>${user.correct}</td>
+                            <td>${user.incorrect}</td>
+                            <td>${user.total}</td>
+                            <td>${user.attempts}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+                });
+        }
+
+        // Update stats table periodically
+        setInterval(updateStatsTable, 5000);
+        updateStatsTable();  // Initial load
+
+        updateProblem();
+    </script>
   </body>
 </html>

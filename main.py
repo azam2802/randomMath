@@ -2,7 +2,7 @@ from flask import Flask, render_template, jsonify, request, redirect, url_for, s
 import random
 
 app = Flask(__name__, static_url_path='/static')
-app.config['SECRET_KEY'] = 'secret'
+app.config['SECRET_KEY'] = 'azam_key'
 
 users = {}
 
@@ -76,6 +76,23 @@ def update_stats():
     })
     
     return jsonify({'status': 'success'})
+
+@app.route('/get_all_stats')
+def get_all_stats():
+    if 'username' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    all_stats = []
+    for username, stats in user_stats.items():
+        all_stats.append({
+            'username': username,
+            'correct': stats['correct_answers'],
+            'incorrect': stats['incorrect_answers'],
+            'total': stats['total_questions'],
+            'attempts': stats['attempts']
+        })
+    
+    return jsonify(all_stats)
 
 def generate_problem():
     operators = ['+', '-', '*']
