@@ -320,119 +320,115 @@
 
     <script>
         let currentAnswer;
-        let correctCount = {{ user_stats.correct_answers }};
-        let totalCount = {{ user_stats.total_questions }};
-        let attemptCount = {{ user_stats.attempts }};
-        let incorrectCount = {{ user_stats.incorrect_answers }};
+        const state = {
+            correctCount: {{ user_stats.correct_answers }},
+            totalCount: {{ user_stats.total_questions }},
+            attemptCount: {{ user_stats.attempts }},
+            incorrectCount: {{ user_stats.incorrect_answers }}
+        };
 
-        function updateServer() {
-            fetch('/update_stats', {
+        const updateServer = async () => {
+            await fetch('/update_stats', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    correct: correctCount,
-                    total: totalCount,
-                    attempts: attemptCount,
-                    incorrect: incorrectCount
+                    correct: state.correctCount,
+                    total: state.totalCount,
+                    attempts: state.attemptCount,
+                    incorrect: state.incorrectCount
                 })
             });
-        }
+        };
 
-        function playSound(type) {
-            let sound;
-            if (type === 'correct') {
-                sound = document.getElementById('correctSound');
-            } else if (type === 'incorrect') {
-                sound = document.getElementById('incorrectSound');
-            } else {
-                sound = document.getElementById('skipSound');
-            }
+        const playSound = (type) => {
+            const sound = document.getElementById(`${type}Sound`);
             sound.currentTime = 0;
             sound.play();
-        }
+        };
 
-        function checkAnswer(event) {
+        const updateStats = () => {
+            const { correctCount, totalCount, attemptCount, incorrectCount } = state;
+            document.getElementById('correct').textContent = correctCount;
+            document.getElementById('total').textContent = totalCount;
+            document.getElementById('attempts').textContent = attemptCount;
+            document.getElementById('incorrect').textContent = incorrectCount;
+        };
+
+        const checkAnswer = async (event) => {
             event.preventDefault();
             const userAnswer = parseInt(document.getElementById('answer').value);
-            attemptCount++;
+            state.attemptCount++;
 
             if (userAnswer === currentAnswer) {
-                correctCount++;
-                totalCount++;  // Only increment total on correct answer
+                state.correctCount++;
+                state.totalCount++;
                 playSound('correct');
-                document.getElementById('correct').textContent = correctCount;
-                document.getElementById('total').textContent = totalCount;
-                document.getElementById('attempts').textContent = attemptCount;
-                document.getElementById('answer').value = '';
-                updateServer();
-                updateProblem();
-                updateStatsTable();  // Add table update
             } else {
-                incorrectCount++;
+                state.incorrectCount++;
                 playSound('incorrect');
-                document.getElementById('incorrect').textContent = incorrectCount;
-                document.getElementById('attempts').textContent = attemptCount;
-                document.getElementById('answer').value = '';
-                updateServer();
-                updateStatsTable();  // Add table update
             }
-        }
 
-        function skipQuestion() {
-            totalCount++;
-            playSound('skip');
-            document.getElementById('total').textContent = totalCount;
+            updateStats();
             document.getElementById('answer').value = '';
-            updateServer();
-            updateProblem();
-            updateStatsTable();  // Add table update
-        }
+            await updateServer();
+            if (userAnswer === currentAnswer) {
+                await updateProblem();
+            }
+            await updateStatsTable();
+        };
 
-        function showAnswer() {
+        const skipQuestion = async () => {
+            state.totalCount++;
+            playSound('skip');
+            updateStats();
+            document.getElementById('answer').value = '';
+            await Promise.all([
+                updateServer(),
+                updateProblem(),
+                updateStatsTable()
+            ]);
+        };
+
+        const showAnswer = async () => {
             const answerDisplay = document.getElementById('answer-display');
             answerDisplay.style.display = 'block';
             answerDisplay.textContent = `Answer: ${currentAnswer}`;
             playSound('skip');
-            updateStatsTable();  // Add table update
-        }
+            await updateStatsTable();
+        };
 
-        function updateProblem() {
-            fetch('/get_problem')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('problem').textContent = data.problem;
-                    document.getElementById('answer-display').style.display = 'none';
-                    currentAnswer = data.answer;
-                });
-        }
+        const updateProblem = async () => {
+            const response = await fetch('/get_problem');
+            const data = await response.json();
+            document.getElementById('problem').textContent = data.problem;
+            document.getElementById('answer-display').style.display = 'none';
+            currentAnswer = data.answer;
+        };
 
-        function updateStatsTable() {
-            fetch('/get_all_stats')
-                .then(response => response.json())
-                .then(data => {
-                    const tbody = document.getElementById('statsTableBody');
-                    tbody.innerHTML = '';
-                    data.forEach(user => {
-                        const row = document.createElement('tr');
-                        row.innerHTML = `
-                            <td>${user.username}</td>
-                            <td>${user.correct}</td>
-                            <td>${user.incorrect}</td>
-                            <td>${user.total}</td>
-                            <td>${user.attempts}</td>
-                        `;
-                        tbody.appendChild(row);
-                    });
-                });
-        }
+        const updateStatsTable = async () => {
+            const response = await fetch('/get_all_stats');
+            const data = await response.json();
+            const tbody = document.getElementById('statsTableBody');
+            tbody.innerHTML = data
+                .map(user => `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.correct}</td>
+                        <td>${user.incorrect}</td>
+                        <td>${user.total}</td>
+                        <td>${user.attempts}</td>
+                    </tr>
+                `).join('');
+        };
 
-        // Update stats table periodically
-        setInterval(updateStatsTable, 5000);
-        updateStatsTable();  // Initial load
-
-        updateProblem();
+        // Initialize
+        (async () => {
+            await updateProblem();
+            await updateStatsTable();
+            setInterval(updateStatsTable, 5000);
+        })();
     </script>
   </body>
 </html>
